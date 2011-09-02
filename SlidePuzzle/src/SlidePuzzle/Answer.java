@@ -5,6 +5,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 public class Answer {
 
@@ -14,6 +17,7 @@ public class Answer {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+
 		int cntL = 0;
 		int cntR = 0;
 		int cntU = 0;
@@ -22,8 +26,7 @@ public class Answer {
 		int cntQuestion = 0;
 
 		int no = 0;
-
-		ArrayList<Question> qList = new ArrayList<Question>();
+		List<Question> qList = new ArrayList<Question>();
 		try {
 			/* ファイルをオープンします。 */
 			BufferedReader br = new BufferedReader(new FileReader(
@@ -56,22 +59,35 @@ public class Answer {
 					String qData = data[2];
 					Question qes = new Question(no, height, width, qData);
 					qList.add(qes);
-					qes.printPanel();
 
 				}
 			}
 			System.out.println("L=" + cntL + " R=" + cntR + " U=" + cntU
 					+ " D=" + cntD);
 			System.out.println("question=" + cntQuestion);
-			
+
 			/* ファイルをクローズします。 */
 			br.close();
 		} catch (IOException e) {
 			System.out.println(e + "例外が発生しました");
 		}
 
-		// 問題解答ロジック
+		
+		// level順ソート
+		Collections.sort(qList,new LevelSort());
+		qList.get(0).printPanel();
 
+		// 問題解答ロジック
+		Question q = qList.get(0);
+		q.solve(cntL,cntR,cntU,cntD);
+		
+		//残りカウント更新
+		cntL = q.getLeft();
+		cntR = q.getRight();
+		cntU = q.getUp();
+		cntD = q.getDown();
+
+		
 		// 回答出力部
 		try {
 			/* FileWriter クラスのインスタンスを作成します。 */
@@ -84,7 +100,25 @@ public class Answer {
 			System.out.println(e + "例外が発生しました");
 		}
 	}
+	
+}
 
+
+
+// 問題No順にソートするクラス
+class NoSort implements Comparator<Question> { // #3
+
+	public int compare(Question o1, Question o2) {
+		return Integer.compare(o1.getNo(), o2.getNo());
+	}
+}
+
+// Level順にソートするクラス
+class LevelSort implements Comparator<Question> {
+
+	public int compare(Question o1, Question o2) {
+		return Integer.compare(o1.getLevel(), o2.getLevel());
+	}
 }
 
 // 問題クラス
@@ -94,6 +128,10 @@ class Question {
 	// 問題level
 	private int level;
 
+	//現在の空白ポジション
+	private int posH;
+	private int posW;
+	
 	// パネル高さ
 	private int height;
 	// パネル幅
@@ -103,6 +141,12 @@ class Question {
 	private String data;
 	// パネル
 	private String[][] panel;
+	
+	//残り移動回数
+	private int left;
+	private int right;
+	private int up;
+	private int down;
 
 	public Question(int no, int height, int width, String data) {
 		this.setNo(no);
@@ -110,32 +154,53 @@ class Question {
 		this.width = width;
 		// パネルの高さ*幅をレベルとする
 		this.setLevel(height * width);
-		//パネル作成
+		// パネル作成
 		this.data = data;
 		panel = new String[height][width];
-		int h=0;
-		int w=0;
-		for(int i = 0; i < data.length(); i++) {
-			panel[h][w]=String.valueOf(data.charAt(i));
-			if(w<width-1){
+		int h = 0;
+		int w = 0;
+		for (int i = 0; i < data.length(); i++) {
+			panel[h][w] = String.valueOf(data.charAt(i));
+			if (panel[h][w] == "0"){
+				posH = h;
+				posW = w;
+			}
+			if (w < width - 1) {
 				w++;
-			}else{
-				w=0;
+			} else {
+				w = 0;
 				h++;
 			}
 		}
 	}
-	
-	public void printPanel(){
-		System.out.println("============= Question " + no + " Level " + level + " panel " + height + "*" + width + " ===============");
-		for(int i=0;i<height;i++){
-			String line=new String();
-			for(int j=0;j<width;j++){
-				line = line +panel[i][j];
+
+	public void printPanel() {
+		System.out.println("============= Question " + no + " Level " + level
+				+ " panel " + width + "*" + height + " ===============");
+		for (int i = 0; i < height; i++) {
+			String line = new String();
+			for (int j = 0; j < width; j++) {
+				line = line + panel[i][j];
 			}
 			System.out.println(line);
 		}
 	}
+	
+	//解答ロジック
+	public boolean solve(int left,int right,int up ,int down){
+		
+		this.setLeft(left);
+		this.setRight(right);
+		this.setUp(up);
+		this.setDown(down);
+		return false;
+	}
+	
+	//移動ロジック
+	public void Up(){
+		
+	}
+	
 
 	public int getNo() {
 		return no;
@@ -144,6 +209,7 @@ class Question {
 	public void setNo(int no) {
 		this.no = no;
 	}
+
 	public String getData() {
 		return data;
 	}
@@ -159,5 +225,46 @@ class Question {
 	public void setLevel(int level) {
 		this.level = level;
 	}
+
+	public String[][] getPanel() {
+		return panel;
+	}
+
+	public void setPanel(String[][] panel) {
+		this.panel = panel;
+	}
+
+	public int getLeft() {
+		return left;
+	}
+
+	public void setLeft(int left) {
+		this.left = left;
+	}
+
+	public int getRight() {
+		return right;
+	}
+
+	public void setRight(int right) {
+		this.right = right;
+	}
+
+	public int getDown() {
+		return down;
+	}
+
+	public void setDown(int down) {
+		this.down = down;
+	}
+
+	public int getUp() {
+		return up;
+	}
+
+	public void setUp(int up) {
+		this.up = up;
+	}
+
 
 }

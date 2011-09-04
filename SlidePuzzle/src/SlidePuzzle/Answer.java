@@ -102,9 +102,9 @@ public class Answer {
 			for(int i=0;i<cntQuestion;i++){
 				q = qList.get(i);
 				if(q.isCorrect()){
-					fw.write(q.getAnswer());
+					fw.write(q.getAnswer()+"\n");
 				}else{
-					fw.write("");
+					fw.write("\n");
 				}
 			}
 			/* ファイルをクローズします。 */
@@ -227,7 +227,7 @@ class Question {
 			int opCnt = 0;
 			while (true) {
 				opCnt++;
-				if (opCnt > 100) {
+				if (opCnt > 500) {
 					System.out.println("MAX OPERATION!!");
 					break;
 				}

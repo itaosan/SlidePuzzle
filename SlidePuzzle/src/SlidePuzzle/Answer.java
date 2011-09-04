@@ -95,6 +95,7 @@ public class Answer {
 		Collections.sort(qList, new NoSort());
 
 
+		int ansCnt = 0;
 		// 回答出力部
 		try {
 			/* FileWriter クラスのインスタンスを作成します。 */
@@ -104,6 +105,7 @@ public class Answer {
 				q = qList.get(i);
 				if(q.isCorrect()){
 					fw.write(q.getAnswer()+"\n");
+					ansCnt++;
 				}else{
 					fw.write("\n");
 				}
@@ -113,7 +115,10 @@ public class Answer {
 		} catch (IOException e) {
 			System.out.println(e + "例外が発生しました");
 		}
+		System.out.println("ans cnt ="+ ansCnt);
 	}
+
+	
 
 }
 
@@ -437,6 +442,9 @@ class Question {
 		int rankW = Math.abs(w - getCorrectW(val));
 		
 		rtn += rankH + rankW;
+		if (isRecursive){
+			rtn = 0;
+		}
 		return rtn;
 	}
 	

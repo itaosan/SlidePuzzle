@@ -19,6 +19,7 @@ public class Answer {
 	 */
 	public static void main(String[] args) {
 
+		
 		int cntL = 0;
 		int cntR = 0;
 		int cntU = 0;
@@ -166,7 +167,11 @@ class Question {
 	private int up;
 	private int down;
 
-	private static final String ANS_PANEL = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	private static final String ANS_PANEL = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0";
+	public static final String CMD_UP = "U";
+	public static final String CMD_DOWN = "D";
+	public static final String CMD_LEFT = "L";
+	public static final String CMD_RIGHT = "R";
 
 	public Question(int no, int height, int width, String data) {
 		this.setNo(no);
@@ -232,26 +237,10 @@ class Question {
 					break;
 				}
 				int goUp, goDown, goLeft, goRight;
-				if (lastCommand.equals("D")) {
-					goUp = 0;
-				} else {
-					goUp = getUpRank();
-				}
-				if (lastCommand.equals("U")) {
-					goDown = 0;
-				} else {
-					goDown = getDownRank();
-				}
-				if (lastCommand.equals("R")) {
-					goLeft = 0;
-				} else {
-					goLeft = getLeftRank();
-				}
-				if (lastCommand.equals("L")) {
-					goRight = 0;
-				} else {
-					goRight = getRightRank();
-				}
+				goUp = getRank(CMD_UP,posH,posW,false);
+				goDown = getRank(CMD_DOWN,posH,posW,false);
+				goLeft=getRank(CMD_LEFT,posH,posW,false);
+				goRight = getRank(CMD_RIGHT,posH,posW,false);
 				if (goUp <= 0 && goDown <= 0 && goLeft <= 0 && goRight <= 0 && posH == height-1 && posW == width-1) {
 					System.out.println("end operation");
 					//正解チェック
@@ -316,9 +305,6 @@ class Question {
 		if (posH == 0) {
 			throw new Exception("Can't Up! H=" + posH + "posW=" + posW);
 		}
-		if (panel[posH - 1][posW].equals("=")) {
-
-		}
 		work = panel[posH][posW];
 		panel[posH][posW] = panel[posH - 1][posW];
 		panel[posH - 1][posW] = work;
@@ -327,8 +313,8 @@ class Question {
 		// パネルの数を減らす
 		this.up--;
 		// 回答追加
-		answer.append("U");
-		lastCommand = "U";
+		answer.append(CMD_UP);
+		lastCommand = CMD_UP;
 	}
 
 	private void Down() throws Exception {
@@ -344,8 +330,8 @@ class Question {
 		// パネルの数を減らす
 		this.down--;
 		// 回答追加
-		answer.append("D");
-		lastCommand = "D";
+		answer.append(CMD_DOWN);
+		lastCommand = CMD_DOWN;
 	}
 
 	private void Left() throws Exception {
@@ -361,8 +347,8 @@ class Question {
 		// パネルの数を減らす
 		this.left--;
 		// 回答追加
-		answer.append("L");
-		lastCommand = "L";
+		answer.append(CMD_LEFT);
+		lastCommand = CMD_LEFT;
 
 	}
 
@@ -379,94 +365,82 @@ class Question {
 		// パネルの数を減らす
 		this.right--;
 		// 回答追加
-		answer.append("R");
-		lastCommand = "R";
+		answer.append(CMD_RIGHT);
+		lastCommand = CMD_RIGHT;
 	}
 
-	// 上のパネルのRankを返す、移動できない場合は-1 、正しいパネル位置の場合は0を返す
-	private int getUpRank() {
-		if (posH == 0) {
-			return -1;
-		}
-		String val = panel[posH - 1][posW];
-		if (val.equals("=")) {
-			return -1;
-		}
 
-		if (val.equals(getCorrectVal(posH - 1, posW))) {
-			return 0;
-
+	//Rank取得
+	//左と上は再帰的に呼び出す
+	private int getRank(String command,int h, int w,boolean isRecursive){
+		int rtn=0;
+		String val;
+		//壁際
+		if((command.equals(CMD_LEFT) && w == 0) ||
+				(command.equals(CMD_RIGHT) && w == width-1) ||
+				(command.equals(CMD_UP) && h == 0) ||
+				(command.equals(CMD_DOWN) && h == height-1)){
+			//再帰不可
+			if(isRecursive){
+				//再帰呼び出しの場合は考慮しない
+				return 0;
+			}else{
+				return -100;
+			}
 		}
-		int rankH = (posH - 1) - getCorrectH(val);
-		int rankW = posW - getCorrectW(val);
-		// System.out.println(rankH + " " + rankW);
-		return Math.abs(rankH) + Math.abs(rankW);
+		//入れ替え対象pos
+		//前回と逆に移動しようとしている場合はマイナスランク
+		//int pena = ((height+width)/2)*-1;
+		int pena = -1;
+		if(command.equals(CMD_UP)){
+			h--;
+			if (lastCommand.equals(CMD_DOWN) && isRecursive == false){
+				rtn-=pena;
+			}
+		}else if (command.equals(CMD_DOWN)){
+			h++;
+			if (lastCommand.equals(CMD_UP)&& isRecursive == false){
+				rtn-=pena;
+			}
+		}else if(command.equals(CMD_LEFT)){
+			w--;
+			if (lastCommand.equals(CMD_RIGHT)&& isRecursive == false){
+				rtn-=pena;
+			}
+		}else if(command.equals(CMD_RIGHT)){
+			w++;
+			if (lastCommand.equals(CMD_LEFT)&& isRecursive == false){
+				rtn-=pena;
+			}
+		}
+		val = panel[h][w];
+		
+		//移動対象が壁なら移動不可
+		if(val.equals("=")){
+			//再帰不可
+			if(isRecursive){
+				//再帰呼び出しの場合は考慮しない
+				return 0;
+			}else{
+				return -100;
+			}
+		}
+		
 
+		//左と上は再帰でその左と上のRankも対象にする
+		if(command.equals(CMD_LEFT) || command.equals(CMD_UP)){
+			rtn += getRank(CMD_LEFT, h, w, true) + getRank(CMD_UP,h,w,true);
+		}
+		
+		//現在位置からの差分を出す
+		int rankH = Math.abs(h - getCorrectH(val));
+		int rankW = Math.abs(w - getCorrectW(val));
+		
+		rtn += rankH + rankW;
+		return rtn;
 	}
-
-	// 下のパネルのRankを返す、移動できない場合は-1 、正しいパネル位置の場合は0を返す
-	private int getDownRank() {
-		if (posH == height - 1) {
-			return -1;
-		}
-		String val = panel[posH + 1][posW];
-		if (val.equals("=")) {
-			return -1;
-		}
-
-		if (val.equals(getCorrectVal(posH + 1, posW))) {
-			return 0;
-
-		}
-		int rankH = (posH + 1) - getCorrectH(val);
-		int rankW = posW - getCorrectW(val);
-		// System.out.println(rankH + " " + rankW);
-		return Math.abs(rankH) + Math.abs(rankW);
-
-	}
-
-	// 左のパネルのRankを返す、移動できない場合は-1 、正しいパネル位置の場合は0を返す
-	private int getLeftRank() {
-		if (posW == 0) {
-			return -1;
-		}
-		String val = panel[posH][posW - 1];
-		if (val.equals("=")) {
-			return -1;
-		}
-
-		if (val.equals(getCorrectVal(posH, posW - 1))) {
-			return 0;
-
-		}
-		int rankH = (posH) - getCorrectH(val);
-		int rankW = posW - 1 - getCorrectW(val);
-		// System.out.println(rankH + " " + rankW);
-		return Math.abs(rankH) + Math.abs(rankW);
-
-	}
-
-	// 右のパネルのRankを返す、移動できない場合は-1 、正しいパネル位置の場合は0を返す
-	private int getRightRank() {
-		if (posW == height - 1) {
-			return -1;
-		}
-		String val = panel[posH][posW + 1];
-		if (val.equals("=")) {
-			return -1;
-		}
-
-		if (val.equals(getCorrectVal(posH, posW + 1))) {
-			return 0;
-
-		}
-		int rankH = (posH) - getCorrectH(val);
-		int rankW = posW + 1 - getCorrectW(val);
-		// System.out.println(rankH + " " + rankW);
-		return Math.abs(rankH) + Math.abs(rankW);
-
-	}
-
+	
+	
 	// 指定場所のあるべきパネルを返す
 	private String getCorrectVal(int H, int W) {
 		return String.valueOf(ANS_PANEL.charAt(H * height + W));

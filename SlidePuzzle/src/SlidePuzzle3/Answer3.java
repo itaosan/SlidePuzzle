@@ -84,6 +84,7 @@ public class Answer3 {
 
 		// 問題解答ロジック
 //		 Question q = qList.get(3);
+//		 Question q = qList.get(7);
 //		 q.solve(cntL, cntR, cntU, cntD);
 
 		Question q;
@@ -335,12 +336,18 @@ class Question {
 				//3を2の位置にセット
 				batchMove('3', 0, 1);
 				printPanel();
-				//2を３の下にセット（3を動かさないように）
+				//2を右下角にセット（ロックしないように離す）
+				batchMove('2', 2, 2);
+				//再度3を2の位置にセット
+				batchMove('3', 0, 1);
+				setStatus(0,1,1);
+				//再度2を3の下にセット
 				batchMove('2', 1, 1);
-				printPanel();
+				setStatus(1,1,1);
 				//3の位置から左、下へ移動
 				moveBlankPanel(0, 2);
-				printPanel();
+				setStatus(0,1,0);
+				setStatus(1,1,0);
 				move(CMD_LEFT);
 				printPanel();
 				move(CMD_DOWN);

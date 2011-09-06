@@ -83,21 +83,23 @@ public class Answer3 {
 		Collections.sort(qList, new LevelSort());
 
 		// 問題解答ロジック
-		 Question q = qList.get(3);
-		 q.solve(cntL, cntR, cntU, cntD);
+//		 Question q = qList.get(3);
+//		 q.solve(cntL, cntR, cntU, cntD);
 
-//		Question q;
-//		for (int i = 0; i < cntQuestion; i++) {
-//			q = qList.get(i);
-//			q.solve(cntL, cntR, cntU, cntD);
-//			if (q.isCorrect()) {
-//				// 正解時残りカウント更新
-//				cntL = q.getLeft();
-//				cntR = q.getRight();
-//				cntU = q.getUp();
-//				cntD = q.getDown();
-//			}
-//		}
+		Question q;
+		for (int i = 0; i < cntQuestion; i++) {
+			q = qList.get(i);
+			if(q.getHeight() == 3 && q.getWidth() == 3 && q.getWall() == 0){
+				q.solve(cntL, cntR, cntU, cntD);
+			}
+			if (q.isCorrect()) {
+				// 正解時残りカウント更新
+				cntL = q.getLeft();
+				cntR = q.getRight();
+				cntU = q.getUp();
+				cntD = q.getDown();
+			}
+		}
 		// No順ソート
 		Collections.sort(qList, new NoSort());
 
@@ -302,6 +304,7 @@ class Question {
 			}
 			System.out.println(line);
 		}
+		System.out.println(answer);
 
 	}
 
@@ -345,10 +348,16 @@ class Question {
 				setStatus(0,1,1);
 				setStatus(0,2,1);
 				
-				//７を4の位置にセット
+				//7を4の位置にセット
+				batchMove('7', 1, 0);
+				printPanel();
+				//ステータス固定しない
+				//4を右下角にセット（ロックしないように離す）
+				batchMove('4', 2, 2);
+				//再度7を4の位置にセット
 				batchMove('7', 1, 0);
 				setStatus(1,0,1);
-				//４」を７の右にセット（7を動かさないように）
+				//再度4を7の右にセット
 				batchMove('4', 1, 1);
 				setStatus(1,1,1);
 				//7の位置から上、右へ移動
@@ -358,6 +367,14 @@ class Question {
 				move(CMD_UP);
 				move(CMD_RIGHT);
 				//回転して0を右下にして、解答チェック
+				//5ヲセット
+				batchMove('5', 1, 1);
+				moveBlankPanel(2, 2);
+				//クウハク右下
+				// 正解チェック
+				if (chk()) {
+					correct = true;
+				}
 				break;
 
 			}
@@ -382,10 +399,10 @@ class Question {
 	private boolean batchMove(char val,int targetH,int targetW) throws Exception{
 		int brankTargetH = 0;
 		int brankTargetW = 0;
-		int costUp = 0;
-		int costDown = 0;
-		int costLeft = 0;
-		int costRight = 0;
+		int costUp = -1;
+		int costDown = -1;
+		int costLeft = -1;
+		int costRight = -1;
 		
 		//指定パネルの現在位置
 		int nowH = getNowHeightOf(val);
@@ -422,10 +439,10 @@ class Question {
 		int[] list = {costUp,costDown,costLeft,costRight};
 		Arrays.sort(list);
 		int ope=0;
-		//0以外の最小コストのオペレーションをする
+		//-1以外の最小コストのオペレーションをする
 		for(int i=0 ; i < list.length;i++){
 			ope= list[i];
-			if (ope > 0){
+			if (ope >= 0){
 				break;
 			}
 		}
@@ -433,9 +450,9 @@ class Question {
 			//上に動かしたいので空白を上へ
 			brankTargetH = nowH-1;
 			brankTargetW = nowW;
-			//同軸だったら左か右に1マス動かして最後に戻す(右優先)
-			if(posW == targetW && posH>targetH){
-				if(posW==width){
+			//同軸かつ進行方向に対象パネルある場合だったら左か右に1マス動かして最後に戻す(右優先)
+			if(posW == nowW && nowW==targetW && posH > nowH && nowH > targetH  ){
+				if(posW==width-1){
 					move(CMD_LEFT);
 				}else{
 					move(CMD_RIGHT);
@@ -449,9 +466,9 @@ class Question {
 			//下に動かしたいので空白を下へ
 			brankTargetH = nowH+1;
 			brankTargetW = nowW;
-			//同軸だったら左か右に1マス動かして最後に戻す(右優先)
-			if(posW == targetW && posH<targetH){
-				if(posW==width){
+			//同軸かつ進行方向に対象パネルある場合だったら左か右に1マス動かして最後に戻す(右優先)
+			if(posW == nowW && nowW==targetW && posH < nowH && nowH < targetH  ){
+				if(posW==width-1){
 					move(CMD_LEFT);
 				}else{
 					move(CMD_RIGHT);
@@ -465,9 +482,9 @@ class Question {
 			//左に動かしたいので空白を左へ
 			brankTargetH = nowH;
 			brankTargetW = nowW -1;
-			//同軸だったら上か下に1マス動かして最後に戻す(下優先)
-			if(posH == targetH && posW>targetW){
-				if(posH==height){
+			//同軸かつ進行方向に対象パネルある場合だったら上か下に1マス動かして最後に戻す(下優先)
+			if(posH == nowH && nowH==targetH && posW > nowW && nowW > targetW  ){
+				if(posH==height-1){
 					move(CMD_UP);
 				}else{
 					move(CMD_DOWN);
@@ -481,9 +498,9 @@ class Question {
 			//右に動かしたいので空白を右へ
 			brankTargetH = nowH;
 			brankTargetW = nowW +1;
-			//同軸だったら上か下に1マス動かして最後に戻す(下優先)
-			if(posH == targetH && posW<targetW){
-				if(posH==height){
+			//同軸かつ進行方向に対象パネルある場合だったら上か下に1マス動かして最後に戻す(下優先)
+			if(posH == nowH && nowH==targetH && posW < nowW && nowW < targetW  ){
+				if(posH==height-1){
 					move(CMD_UP);
 				}else{
 					move(CMD_DOWN);

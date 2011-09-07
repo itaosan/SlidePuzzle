@@ -1,4 +1,4 @@
-package SlidePuzzle3;
+package SlidePuzzle4;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -16,7 +16,7 @@ import java.util.Set;
 
 import javax.swing.text.html.HTMLDocument.Iterator;
 
-public class Answer3 {
+public class Answer4 {
 
 	/**
 	 * hogeee
@@ -82,15 +82,15 @@ public class Answer3 {
 		// level順ソート
 		Collections.sort(qList, new LevelSort());
 
-		// 問題解答ロジック
+		// TODO 問題解答ロジック
 //		 Question q = qList.get(3);
-//		 Question q = qList.get(7);
+//		 Question q = qList.get(50);
 //		 q.solve(cntL, cntR, cntU, cntD);
 
 		Question q;
 		for (int i = 0; i < cntQuestion; i++) {
 			q = qList.get(i);
-			if(q.getHeight() == 3 && q.getWidth() == 3 && q.getWall() == 0){
+			if(q.getWall() == 0){
 				q.solve(cntL, cntR, cntU, cntD);
 			}
 			if (q.isCorrect()) {
@@ -309,7 +309,7 @@ class Question {
 
 	}
 
-	// 解答ロジック
+	// TODO 解答ロジック
 	public boolean solve(int left, int right, int up, int down) {
 		// 残パネルセット
 		this.left = left;
@@ -328,66 +328,63 @@ class Question {
 					break;
 				}
 				
-				//3*3の形式に近づける
-				//縦と横を比較
-				//
+				int notCleardHeight=height;
+				int notCleardWidth=width;
 				
-				//
-				//1が入っている？
-				//まずは1を所定の位置に
-				batchMove('1', 0, 0);
-				setStatus(0,0,1);
-				printPanel();
-				//3を2の位置にセット
-				batchMove('3', 0, 1);
-				printPanel();
-				//2を右下角にセット（ロックしないように離す）
-				batchMove('2', 2, 2);
-				//再度3を2の位置にセット
-				batchMove('3', 0, 1);
-				setStatus(0,1,1);
-				//再度2を3の下にセット
-				batchMove('2', 1, 1);
-				setStatus(1,1,1);
-				//3の位置から左、下へ移動
-				moveBlankPanel(0, 2);
-				setStatus(0,1,0);
-				setStatus(1,1,0);
-				move(CMD_LEFT);
-				printPanel();
-				move(CMD_DOWN);
-				printPanel();
-				setStatus(0,1,1);
-				setStatus(0,2,1);
-				
-				//7を4の位置にセット
-				batchMove('7', 1, 0);
-				printPanel();
-				//ステータス固定しない
-				//4を右下角にセット（ロックしないように離す）
-				batchMove('4', 2, 2);
-				//再度7を4の位置にセット
-				batchMove('7', 1, 0);
-				setStatus(1,0,1);
-				//再度4を7の右にセット
-				batchMove('4', 1, 1);
-				setStatus(1,1,1);
-				//7の位置から上、右へ移動
-				moveBlankPanel(2, 0);
-				setStatus(1,0,0);
-				setStatus(1,1,0);
-				move(CMD_UP);
-				move(CMD_RIGHT);
-				//回転して0を右下にして、解答チェック
-				//5ヲセット
-				batchMove('5', 1, 1);
-				moveBlankPanel(2, 2);
-				//クウハク右下
-				// 正解チェック
-				if (chk()) {
-					correct = true;
+				//未クリアの高さ求める
+				for (int i=0;i<height;i++){
+					boolean notCleared = true;
+					for(int j=0;j<width;j++){
+						if(getStatus(i, j)==0){
+							notCleared = true;
+							break;
+						}
+						notCleared = false;
+					}
+					if(!notCleared){
+						notCleardHeight--;
+					}
 				}
-				break;
+				
+				//未クリアの幅求める
+				for (int i=0;i<width;i++){
+					boolean notCleared = true;
+					for(int j=0;j<height;j++){
+						if(getStatus(j, i)==0){
+							notCleared = true;
+							break;
+						}
+						notCleared = false;
+					}
+					if(!notCleared){
+						notCleardWidth--;
+					}
+				}
+				
+				//2*2の形式に近づける
+				if(notCleardHeight>2 || notCleardWidth>2){
+					//縦と横を比較
+					if(notCleardHeight<notCleardWidth){
+						//縦パネル一列セット
+						setPanelOneHeight(height - notCleardHeight,width-notCleardWidth);
+					}else{
+						//横パネル1列セット
+						setPanelOneWidht(height - notCleardHeight,width-notCleardWidth);
+					}
+					
+				}else{
+					//残りは2*2マス
+					//2*2の左上のパネルをセット
+					batchMove(getCorrectVal(height-2, width-2), height-2, width-2);
+					//クウハク右下
+					moveBlankPanel(height-1, width-1);
+					// 正解チェック
+					if (chk()) {
+						correct = true;
+					}
+					break;
+				}
+				
 
 			}
 			printPanel();
@@ -399,6 +396,88 @@ class Question {
 		}
 
 		return true;
+	}
+
+	/**
+	 * 横一列のパネルセット
+	 * @param startPosH 開始高さ
+	 * @param startPosW 開始幅
+	 * @throws Exception 
+	 */
+	private void setPanelOneWidht(int startPosH, int startPosW) throws Exception {
+		//マイナス2の位置まではただセット
+		while((width-1)-startPosW>1){
+			batchMove(getCorrectVal(startPosH, startPosW), startPosH, startPosW);
+			setStatus(startPosH,startPosW,1);
+			printPanel();
+			startPosW++;
+		}
+		//マイナス2からはロック回避
+		//右はしパネルをひとつ左の位置にセット
+		batchMove(getCorrectVal(startPosH, width-1), startPosH, width-1-1);
+		printPanel();
+		//対象パネルを右端の2個下の場所にセット（ロックしないように離す）
+		batchMove(getCorrectVal(startPosH, startPosW), startPosH+2, width-1);
+		printPanel();
+		//再度右端パネル一つ左の位置にセット
+		batchMove(getCorrectVal(startPosH, width-1), startPosH, width-1-1);
+		setStatus(startPosH,width-1-1,1);
+		//対象パネルをその下にセット
+		batchMove(getCorrectVal(startPosH, startPosW), startPosH+1, width-1-1);
+		setStatus(startPosH+1,width-1-1,1);
+		//一番右の位置から左、下へ移動
+		moveBlankPanel(startPosH, width-1);
+		setStatus(startPosH,width-1-1,0);
+		setStatus(startPosH+1,width-1-1,0);
+		move(CMD_LEFT);
+		printPanel();
+		move(CMD_DOWN);
+		printPanel();
+		setStatus(startPosH,startPosW,1);
+		setStatus(startPosH,startPosW+1,1);
+
+		
+	}
+
+	/**
+	 * 縦一列のパネルセット
+	 * @param startPosH 開始高さ
+	 * @param startPosW 開始幅
+	 * @throws Exception 
+	 */
+	private void setPanelOneHeight(int startPosH, int startPosW) throws Exception {
+		//マイナス2の位置まではただセット
+		while((height-1)-startPosH>1){
+			batchMove(getCorrectVal(startPosH, startPosW), startPosH, startPosW);
+			setStatus(startPosH,startPosW,1);
+			printPanel();
+			startPosH++;
+		}
+		//マイナス2からはロック回避
+		//下はしパネルをひとつ上の位置にセット
+		batchMove(getCorrectVal(height-1, startPosW), height-1-1, startPosW);
+		printPanel();
+		//対象パネルを下端の2個右の場所にセット（ロックしないように離す）
+		batchMove(getCorrectVal(startPosH, startPosW), height-1, startPosW+2);
+		printPanel();
+		//再度下はしパネルをひとつ上の位置にセット
+		batchMove(getCorrectVal(height-1, startPosW), height-1-1, startPosW);
+		setStatus(height-1-1,startPosW,1);
+		//対象パネルをその右にセット
+		batchMove(getCorrectVal(startPosH, startPosW), height-1-1, startPosW+1);
+		setStatus(height-1-1,startPosW+1,1);
+		//一番下の位置から上、右へ移動
+		moveBlankPanel(height-1, startPosW);
+		setStatus(height-1-1,startPosW,0);
+		setStatus(height-1-1,startPosW+1,0);
+		move(CMD_UP);
+		printPanel();
+		move(CMD_RIGHT);
+		printPanel();
+		setStatus(startPosH,startPosW,1);
+		setStatus(startPosH+1,startPosW,1);
+
+		
 	}
 
 	/**
@@ -753,6 +832,10 @@ class Question {
 			targetW--;
 		}else if(pos == CMD_RIGHT){
 			targetW++;
+		}
+		//そもそもそこに移動不可能な場合は-1
+		if (getStatus(targetH, targetW) == 1){
+			return -1;
 		}
 		//単純位置からコスト算出
 		cost = Math.abs(posW - targetW)+Math.abs(posH - targetH);
